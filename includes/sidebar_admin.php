@@ -22,6 +22,7 @@
     echo navItem('tahap.php', 'layers', 'Tahap Aktif', $current === 'tahap.php');
     echo navItem('kelompok.php', 'users-2', 'Kelompok Qurban', $current === 'kelompok.php');
     echo navItem('anggota.php', 'user-plus', 'Anggota Shohibul', $current === 'anggota.php');
+    echo navItem('pengguna.php', 'users', 'Pengguna', $current === 'pengguna.php');
     echo navItem('setoran.php', 'banknote', 'Catat Setoran', $current === 'setoran.php');
     echo navItem('riwayat.php', 'receipt-text', 'Riwayat Setoran', $current === 'riwayat.php');
     echo navItem('rekap.php', 'table-properties', 'Rekapitulasi Tabungan', $current === 'rekap.php');

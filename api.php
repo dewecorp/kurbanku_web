@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/config.php';
 
 $pdo = getDB();
@@ -29,6 +30,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // --- POST handler ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $user = $_SESSION['user'] ?? [];
+
+    // File upload action (needs admin session)
+    if (isset($_GET['action']) && $_GET['action'] === 'uploadFoto') {
+        if (empty($user['role']) || $user['role'] !== 'admin') {
+            http_response_code(403);
+            jsonResponse(['status' => 'error', 'message' => 'Akses ditolak.']);
+        }
+        if (empty($_FILES['foto'])) {
+            jsonResponse(['status' => 'error', 'message' => 'File tidak ditemukan.']);
+        }
+        $file = $_FILES['foto'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            jsonResponse(['status' => 'error', 'message' => 'Upload gagal.']);
+        }
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!in_array($ext, $allowed)) {
+            jsonResponse(['status' => 'error', 'message' => 'Format file tidak didukung.']);
+        }
+        $dir = __DIR__ . '/uploads/';
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        $filename = 'user_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $dest = $dir . $filename;
+        if (move_uploaded_file($file['tmp_name'], $dest)) {
+            jsonResponse(['status' => 'success', 'path' => 'uploads/' . $filename]);
+        }
+        jsonResponse(['status' => 'error', 'message' => 'Gagal menyimpan file.']);
+    }
+
+    // Require admin session for other write operations
+    if (empty($user['role']) || $user['role'] !== 'admin') {
+        jsonResponse(['status' => 'error', 'message' => 'Akses ditolak. Sesi admin diperlukan.']);
+    }
     $input = json_decode(file_get_contents('php://input'), true);
     if (!$input) {
         jsonResponse(['status' => 'error', 'message' => 'Data JSON tidak valid.']);
@@ -59,7 +94,13 @@ function buildResponse($pdo) {
     $groups = fetchAll($pdo, "SELECT id, nama, tipe, targetTotal, tahapId, updatedAt FROM kelompok ORDER BY nama ASC");
     $participants = fetchAll($pdo, "SELECT id, nama, whatsapp, pin, kelompok_id, target_tabungan, tahapId, updatedAt FROM anggota ORDER BY nama ASC");
     $deposits = fetchAll($pdo, "SELECT id, tanggal, anggota_id, jumlah, bulan, recorded_by, catatan, tahapId, updatedAt FROM setoran ORDER BY updatedAt DESC");
+    $users = fetchAll($pdo, "SELECT id, nama, username, password, role, foto, updated_at AS updatedAt FROM users ORDER BY role ASC, nama ASC");
     $settings = fetchPengaturan($pdo);
+
+    // Only include users for admin sessions
+    $user = $_SESSION['user'] ?? [];
+    $isAdmin = isset($user['role']) && $user['role'] === 'admin';
+    if (!$isAdmin) $users = [];
 
     // Map fields to match frontend expectations
     $groups = array_map(function($g) {
@@ -118,6 +159,7 @@ function buildResponse($pdo) {
         'groups' => $groups,
         'participants' => $participants,
         'deposits' => $deposits,
+        'users' => $users,
         'deletedRecords' => [],
         'settings' => $settings,
         'lastUpdated' => $now,
@@ -238,12 +280,49 @@ function saveRequest($pdo, $request) {
         if (!empty($settings['monthlyInstallment'])) upsertSetting($pdo, 'monthlyInstallment', (string)safeNumber($settings['monthlyInstallment']), $tNow);
     }
 
+    // User management
+    if ($action === 'saveUser') {
+        $id = safeString($data['id'] ?? '') ?: ('u-' . generateId('usr'));
+        $nama = safeString($data['nama'] ?? '');
+        $username = safeString($data['username'] ?? '');
+        $role = safeString($data['role'] ?? 'shohibul');
+        $password = safeString($data['password'] ?? '');
+        $foto = safeString($data['foto'] ?? '');
+
+        if (empty($username)) {
+            jsonResponse(['status' => 'error', 'message' => 'Username wajib diisi.']);
+        }
+
+        $check = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ? AND id != ?");
+        $check->execute([$username, $id]);
+        if ($check->fetchColumn() > 0) {
+            jsonResponse(['status' => 'error', 'message' => 'Username sudah digunakan.']);
+        }
+
+        if (empty($password)) {
+            $pdo->prepare("UPDATE users SET nama = ?, username = ?, role = ?, foto = ?, updated_at = ? WHERE id = ?")
+                ->execute([$nama, $username, $role, $foto, $tNow, $id]);
+        } else {
+            $hash = password_hash($password, PASSWORD_BCRYPT);
+            $checkId = $pdo->prepare("SELECT COUNT(*) FROM users WHERE id = ?");
+            $checkId->execute([$id]);
+            if ($checkId->fetchColumn() > 0) {
+                $pdo->prepare("UPDATE users SET nama = ?, username = ?, password = ?, role = ?, foto = ?, updated_at = ? WHERE id = ?")
+                    ->execute([$nama, $username, $hash, $role, $foto, $tNow, $id]);
+            } else {
+                $pdo->prepare("INSERT INTO users (id, nama, username, password, role, foto, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                    ->execute([$id, $nama, $username, $hash, $role, $foto, $tNow, $tNow]);
+            }
+        }
+    }
+
     // Handle deletes
     $deleteMap = [
         'deleteTahap' => 'tahap',
         'deleteKelompok' => 'kelompok',
         'deleteAnggota' => 'anggota',
         'deleteSetoran' => 'setoran',
+        'deleteUser' => 'users',
     ];
     if (isset($deleteMap[$action]) && !empty($data['id'])) {
         $id = safeString($data['id']);
@@ -251,6 +330,14 @@ function saveRequest($pdo, $request) {
         if ($action === 'deleteKelompok') $pdo->prepare("DELETE FROM kelompok WHERE id = ?")->execute([$id]);
         if ($action === 'deleteAnggota') $pdo->prepare("DELETE FROM anggota WHERE id = ?")->execute([$id]);
         if ($action === 'deleteSetoran') $pdo->prepare("DELETE FROM setoran WHERE id = ?")->execute([$id]);
+        if ($action === 'deleteUser') {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE id = ? AND role = 'admin'");
+            $stmt->execute([$id]);
+            if ($stmt->fetchColumn() > 0) {
+                jsonResponse(['status' => 'error', 'message' => 'Tidak dapat menghapus akun admin.']);
+            }
+            $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
+        }
     }
 }
 

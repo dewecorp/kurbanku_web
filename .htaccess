@@ -1,3 +1,5 @@
+Options -Indexes -MultiViews
+
 <IfModule mod_headers.c>
   <FilesMatch "\.(js|css|html?)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
@@ -9,4 +11,20 @@
     Header set Pragma "no-cache"
     Header set Expires "Thu, 19 Nov 1981 08:52:00 GMT"
   </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+</IfModule>
+
+<FilesMatch "\.(bat|ps1|sh|ini|log)$">
+  Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.git">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Allow direct access to uploads folder
+  RewriteRule ^uploads/ - [L]
 </IfModule>

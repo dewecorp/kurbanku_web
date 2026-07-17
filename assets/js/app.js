@@ -4,7 +4,7 @@
 
   var state = {
     user: null,
-    data: { tahaps: [], groups: [], participants: [], deposits: [], settings: {} },
+    data: { tahaps: [], groups: [], participants: [], deposits: [], users: [], settings: {} },
     currentTahapId: null
   };
 
@@ -143,6 +143,7 @@
         groups: res.data.kelompok || [],
         participants: res.data.anggota || [],
         deposits: res.data.setoran || [],
+        users: res.users || [],
         settings: res.settings || {}
       };
       state.currentTahapId = res.currentTahapId || (state.data.tahaps[0] && state.data.tahaps[0].id) || null;
@@ -226,10 +227,10 @@
         var myTunggak = bulanBerjalan > 0 ? Math.max(0, bulanBerjalan - myMonthsCount) : 0;
         var myPct = myTarget > 0 ? Math.min(100, Math.round((mySetor / myTarget) * 100)) : 0;
         statBox.innerHTML =
-          statCard('Setoran Saya', fmtMoney(mySetor), 'wallet', 'text-sky-600', 'bg-sky-50') +
-          statCard('Target Tabungan', fmtMoney(myTarget), 'target', 'text-violet-600', 'bg-violet-50') +
-          statCard('Tunggakan/Belum Bayar', myTunggak + ' bln', 'alert-triangle', 'text-rose-600', 'bg-rose-50') +
-          statCard('Progress', myPct + '%', 'check-circle', 'text-amber-600', 'bg-amber-50');
+          statCard('Setoran Saya', fmtMoney(mySetor), 'wallet', 'text-sky-600', 'bg-sky-50', 'from-sky-500 to-blue-600') +
+          statCard('Target Tabungan', fmtMoney(myTarget), 'target', 'text-violet-600', 'bg-violet-50', 'from-violet-500 to-purple-600') +
+          statCard('Tunggakan/Belum Bayar', myTunggak + ' bln', 'alert-triangle', 'text-rose-600', 'bg-rose-50', 'from-rose-500 to-pink-600') +
+          statCard('Progress', myPct + '%', 'check-circle', 'text-amber-600', 'bg-amber-50', 'from-amber-500 to-orange-600');
       } else {
         var totalTarget = parts.reduce(function (s, p) { return s + (Number(p.target_saving) || 0); }, 0);
         var totalSetor = progressOf(parts.map(function (p) { return p.id; }), allDeposits());
@@ -237,10 +238,10 @@
           return (Number(p.target_saving) || 0) > 0 && depositSum(p.id, deps) >= Number(p.target_saving);
         }).length;
         statBox.innerHTML =
-          statCard('Total Shohibul', parts.length, 'users', 'text-emerald-600', 'bg-emerald-50') +
-          statCard('Total Setoran', fmtMoney(totalSetor), 'wallet', 'text-sky-600', 'bg-sky-50') +
-          statCard('Target Tabungan', fmtMoney(totalTarget), 'target', 'text-violet-600', 'bg-violet-50') +
-          statCard('Lunas', lunas + ' / ' + parts.length, 'check-circle', 'text-amber-600', 'bg-amber-50');
+          statCard('Total Shohibul', parts.length, 'users', 'text-emerald-600', 'bg-emerald-50', 'from-emerald-500 to-teal-600') +
+          statCard('Total Setoran', fmtMoney(totalSetor), 'wallet', 'text-sky-600', 'bg-sky-50', 'from-sky-500 to-blue-600') +
+          statCard('Target Tabungan', fmtMoney(totalTarget), 'target', 'text-violet-600', 'bg-violet-50', 'from-violet-500 to-purple-600') +
+          statCard('Lunas', lunas + ' / ' + parts.length, 'check-circle', 'text-amber-600', 'bg-amber-50', 'from-amber-500 to-orange-600');
       }
     }
 
@@ -256,10 +257,10 @@
           var t = grpParts.reduce(function (s, p) { return s + (Number(p.target_saving) || 0); }, 0);
           var cur = progressOf(ids, deps);
           var pct = t > 0 ? Math.min(100, Math.round((cur / t) * 100)) : 0;
-          return '<div class="bg-slate-50/60 p-4 rounded-xl border border-slate-100">' +
+          return '<div class="bg-gradient-to-br from-emerald-50 to-white p-4 rounded-xl border border-emerald-100">' +
             '<div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-800">' + esc(g.nama) + '</span>' +
             '<span class="text-[10px] font-bold text-emerald-600">' + pct + '%</span></div>' +
-            '<div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:' + pct + '%"></div></div>' +
+            '<div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500" style="width:' + pct + '%"></div></div>' +
             '<div class="flex justify-between text-[10px] text-slate-400 mt-1"><span>' + fmtMoney(cur) + '</span><span>' + fmtMoney(t) + '</span></div>' +
             '</div>';
         }).join('');
@@ -270,11 +271,12 @@
     renderPersonalCard(parts, deps);
   }
 
-  function statCard(label, val, icon, color, bg) {
-    return '<div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">' +
-      '<div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-400 uppercase">' + label + '</span>' +
-      '<span class="w-8 h-8 rounded-lg ' + bg + ' flex items-center justify-center"><i class="w-4 h-4 ' + color + '" data-lucide="' + icon + '"></i></span></div>' +
-      '<p class="text-xl font-extrabold text-slate-900 mt-2">' + esc(val) + '</p></div>';
+  function statCard(label, val, icon, color, bg, grad) {
+    var cardCls = grad ? 'bg-gradient-to-br ' + grad + ' border-transparent' : 'bg-white border-slate-200/80';
+    return '<div class="p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 ' + cardCls + '">' +
+      '<div class="flex items-center justify-between"><span class="text-[11px] font-bold ' + (grad ? 'text-emerald-50' : 'text-slate-500') + ' uppercase tracking-wider">' + label + '</span>' +
+      '<span class="w-9 h-9 rounded-lg ' + (grad ? 'bg-white/25' : bg) + ' flex items-center justify-center ' + (grad ? 'text-white' : color) + '"><i class="w-4 h-4 ' + (grad ? '' : color) + '" data-lucide="' + icon + '"></i></span></div>' +
+      '<p class="text-2xl font-extrabold mt-2 ' + (grad ? 'text-white' : 'text-slate-900') + '">' + esc(val) + '</p></div>';
   }
 
   function renderPersonalCard(parts, deps) {
@@ -319,8 +321,8 @@
         '<td class="p-4 font-semibold text-slate-800">' + esc(t.nama) + '</td>' +
         '<td class="p-4">' + (active ? '<span class="text-[10px] font-bold px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">AKTIF</span>' : '<span class="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-full">Nonaktif</span>') + '</td>' +
         '<td class="p-4 pr-6 text-right"><div class="flex justify-end gap-1.5">' +
-        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditTahap(\'' + esc(t.id) + '\')">Edit</button>' +
-        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteTahap\',\'' + esc(t.id) + '\',\'' + esc(t.nama) + '\')">Hapus</button>' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditTahap(\'' + esc(t.id) + '\')"><i class="w-3.5 h-3.5" data-lucide="pencil"></i></button>' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteTahap\',\'' + esc(t.id) + '\',\'' + esc(t.nama) + '\')"><i class="w-3.5 h-3.5" data-lucide="trash-2"></i></button>' +
         '</div></td></tr>';
     }).join('');
   }
@@ -340,8 +342,8 @@
         '<td class="p-4 font-semibold text-slate-700">' + fmtMoney(g.target) + '</td>' +
         '<td class="p-4 text-slate-600">' + count + ' orang</td>' +
         '<td class="p-4 pr-6 text-right"><div class="flex justify-end gap-1.5">' +
-        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditGroup(\'' + esc(g.id) + '\')">Edit</button>' +
-        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteKelompok\',\'' + esc(g.id) + '\',\'' + esc(g.nama) + '\')">Hapus</button>' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditGroup(\'' + esc(g.id) + '\')"><i class="w-3.5 h-3.5" data-lucide="pencil"></i></button>' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteKelompok\',\'' + esc(g.id) + '\',\'' + esc(g.nama) + '\')"><i class="w-3.5 h-3.5" data-lucide="trash-2"></i></button>' +
         '</div></td></tr>';
     }).join('');
   }
@@ -364,8 +366,8 @@
         '<td class="p-4 text-slate-600">' + (g ? esc(g.nama) : '<span class="text-slate-300">-</span>') + '</td>' +
         '<td class="p-4 font-semibold text-slate-700">' + fmtMoney(p.target_saving) + '</td>' +
         '<td class="p-4 pr-6 text-right"><div class="flex justify-end gap-1.5">' +
-        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditParticipant(\'' + esc(p.id) + '\')">Edit</button>' +
-        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteAnggota\',\'' + esc(p.id) + '\',\'' + esc(p.nama) + '\')">Hapus</button>' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditParticipant(\'' + esc(p.id) + '\')"><i class="w-3.5 h-3.5" data-lucide="pencil"></i></button>' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteAnggota\',\'' + esc(p.id) + '\',\'' + esc(p.nama) + '\')"><i class="w-3.5 h-3.5" data-lucide="trash-2"></i></button>' +
         '</div></td></tr>';
     }).join('');
   }
@@ -412,8 +414,8 @@
           '<td class="p-4 text-slate-500 text-xs">' + esc(d.catatan || '-') + '</td>' +
           (isShohibul ? '' :
           '<td class="p-4 pr-6 text-right"><div class="flex justify-end gap-1.5">' +
-          '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditDeposit(\'' + esc(d.id) + '\')">Edit</button>' +
-          '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteSetoran\',\'' + esc(d.id) + '\')">Hapus</button>' +
+          '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditDeposit(\'' + esc(d.id) + '\')"><i class="w-3.5 h-3.5" data-lucide="pencil"></i></button>' +
+          '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteSetoran\',\'' + esc(d.id) + '\')"><i class="w-3.5 h-3.5" data-lucide="trash-2"></i></button>' +
           '</div></td>') +
           '</tr>';
       }).join('');
@@ -563,7 +565,8 @@
       setoran: ['Transaksi', 'Catat Setoran'],
       rekap: ['Rekapitulasi', 'Rekapitulasi Tabungan'],
       riwayat: ['Riwayat', 'Riwayat Setoran Saya'],
-      pengaturan: ['Pengaturan', 'Pengaturan Cloud']
+      pengaturan: ['Pengaturan', 'Pengaturan Cloud'],
+      pengguna: ['Pengguna', 'Manajemen Pengguna']
     };
     var t = titles[page] || ['QurbanKu', 'Dashboard'];
     if (el('header-subtitle')) el('header-subtitle').textContent = t[0];
@@ -589,6 +592,7 @@
       else if (page === 'setoran') { fillStageFilters(); fillDepositSelects(); renderDeposits(); }
       else if (page === 'rekap') { fillStageFilters(); buildRekapRows(state.user && state.user.role === 'shohibul' ? state.user.participantId : null); }
       else if (page === 'riwayat') { fillStageFilters(); renderDeposits(); }
+      else if (page === 'pengguna') { renderUsers(); }
       else if (page === 'pengaturan') renderSettings();
       if (window.lucide) lucide.createIcons();
     } catch (e) {
@@ -736,6 +740,161 @@
   window.formatMoneyInput = function (inp) {
     var v = String(inp.value).replace(/[^\d]/g, '');
     inp.value = v ? Number(v).toLocaleString('id-ID') : '';
+  };
+
+  // ---------- user management ----------
+  var _userPendingFoto = null;
+
+  function renderUsers() {
+    var tb = el('user-table-body');
+    if (!tb) return;
+    var q = (el('user-search') && el('user-search').value || '').toLowerCase();
+    var list = state.data.users.slice();
+    if (q) list = list.filter(function (u) { return (u.nama || '').toLowerCase().indexOf(q) >= 0 || (u.username || '').toLowerCase().indexOf(q) >= 0; });
+    if (!list.length) { tb.innerHTML = emptyMsg('Belum ada pengguna.'); return; }
+    tb.innerHTML = list.map(function (u, i) {
+      var initial = (u.nama || '?').charAt(0).toUpperCase();
+      var fotoHtml = u.foto
+        ? '<img class="w-10 h-10 rounded-full object-cover" src="' + esc(u.foto) + '" alt=""/>'
+        : '<div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">' + initial + '</div>';
+      var roleLabel = u.role === 'admin' ? '<span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">Admin</span>' : '<span class="px-2 py-0.5 bg-sky-100 text-sky-700 text-[10px] font-bold rounded-full">Shohibul</span>';
+      return '<tr class="hover:bg-slate-50/60">' +
+        '<td class="p-4 pl-6 text-center text-slate-400 font-mono text-[11px]">' + (i + 1) + '</td>' +
+        '<td class="p-4">' + fotoHtml + '</td>' +
+        '<td class="p-4 font-semibold text-slate-800">' + esc(u.nama) + '</td>' +
+        '<td class="p-4 text-slate-600 font-mono text-xs">' + esc(u.username) + '</td>' +
+        '<td class="p-4 text-slate-400 text-xs font-mono">••••••••</td>' +
+        '<td class="p-4">' + roleLabel + '</td>' +
+        '<td class="p-4 pr-6 text-right"><div class="flex justify-end gap-1.5">' +
+        '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold" onclick="openEditUser(\'' + esc(u.id) + '\')"><i class="w-3.5 h-3.5" data-lucide="pencil"></i></button>' +
+        (u.role === 'admin' ? '' : '<button class="px-2.5 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold" onclick="confirmDelete(\'deleteUser\',\'' + esc(u.id) + '\',\'pengguna\')"><i class="w-3.5 h-3.5" data-lucide="trash-2"></i></button>') +
+        '</div></td></tr>';
+    }).join('');
+  }
+  window.resetUserPagination = renderUsers;
+
+  function onUserRoleChange() {
+    var role = el('user-role').value;
+    var isShohibul = role === 'shohibul';
+    el('user-nama-wrapper').classList.toggle('hidden', isShohibul);
+    el('user-anggota-wrapper').classList.toggle('hidden', !isShohibul);
+    if (isShohibul) populateUserAnggotaSelect();
+  }
+  window.onUserRoleChange = onUserRoleChange;
+
+  function populateUserAnggotaSelect() {
+    var sel = el('user-anggota-select');
+    if (!sel) return;
+    var parts = state.data.participants.slice();
+    var editId = el('edit-user-id').value;
+    var editUsername = editId ? (state.data.users.find(function (u) { return u.id === editId; }) || {}).username : '';
+    var usedIds = {};
+    state.data.users.forEach(function (u) { if (u.id !== editId && u.role === 'shohibul') usedIds[u.username] = true; });
+    sel.innerHTML = '<option value="">-- Pilih Anggota --</option>';
+    parts.forEach(function (p) {
+      var selected = String(p.id) === String(editUsername) ? ' selected' : '';
+      var disabled = usedIds[p.id] ? ' disabled' : '';
+      sel.innerHTML += '<option value="' + esc(p.id) + '"' + selected + disabled + '>' + esc(p.nama) + '</option>';
+    });
+  }
+
+  function onUserAnggotaChange() {
+    var sel = el('user-anggota-select');
+    var id = sel.value;
+    if (!id) { el('user-username').value = ''; return; }
+    var p = state.data.participants.find(function (x) { return x.id === id; });
+    if (p) {
+      el('user-username').value = p.id;
+    }
+  }
+  window.onUserAnggotaChange = onUserAnggotaChange;
+
+  window.previewUserAvatar = function (input) {
+    var pre = el('user-avatar-preview');
+    if (!input.files || !input.files[0]) { pre.innerHTML = (el('user-nama').value || '?').charAt(0).toUpperCase(); return; }
+    var reader = new FileReader();
+    reader.onload = function (e) { pre.innerHTML = '<img class="w-full h-full rounded-full object-cover" src="' + e.target.result + '" alt=""/>'; };
+    reader.readAsDataURL(input.files[0]);
+  };
+
+  window.openAddUser = function () {
+    el('user-modal-title').textContent = 'Tambah Pengguna';
+    el('edit-user-id').value = '';
+    el('user-form').reset();
+    el('user-password').required = true;
+    el('user-password').placeholder = 'Password minimal 6 karakter';
+    el('user-avatar-preview').textContent = '?';
+    el('user-foto-path').value = '';
+    _userPendingFoto = null;
+    onUserRoleChange();
+    openModal('user-modal');
+  };
+
+  window.openEditUser = function (id) {
+    var u = state.data.users.find(function (x) { return x.id === id; }); if (!u) return;
+    el('user-modal-title').textContent = 'Edit Pengguna';
+    el('edit-user-id').value = u.id;
+    el('user-nama').value = u.nama || '';
+    el('user-username').value = u.username || '';
+    el('user-role').value = u.role || 'shohibul';
+    el('user-foto').value = '';
+    el('user-foto-path').value = u.foto || '';
+    el('user-password').required = false;
+    el('user-password').placeholder = 'Kosongkan jika tidak diubah';
+    _userPendingFoto = null;
+    var initial = (u.nama || '?').charAt(0).toUpperCase();
+    el('user-avatar-preview').innerHTML = u.foto ? '<img class="w-full h-full rounded-full object-cover" src="' + esc(u.foto) + '" alt=""/>' : initial;
+    onUserRoleChange();
+    openModal('user-modal');
+  };
+
+  window.handleUserSubmit = function (e) {
+    e.preventDefault();
+    var btn = e.target.querySelector('button[type=submit]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+
+    var role = el('user-role').value;
+    var nama = role === 'shohibul' ? (function () {
+      var sel = el('user-anggota-select');
+      var p = state.data.participants.find(function (x) { return x.id === sel.value; });
+      return p ? p.nama : '';
+    })() : el('user-nama').value;
+    var username = role === 'shohibul' ? el('user-anggota-select').value : el('user-username').value;
+
+    function doSave(fotoPath) {
+      var password = el('user-password').value;
+      save({
+        action: 'saveUser',
+        data: {
+          id: el('edit-user-id').value,
+          nama: nama,
+          username: username,
+          role: role,
+          foto: fotoPath || el('user-foto-path').value,
+          password: password || undefined
+        }
+      }).then(function () {
+        closeModal('user-modal'); toast('Tersimpan', 'success'); return loadData();
+      }).then(renderCurrentPage).catch(function (e) {
+        toast(e.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+      });
+    }
+
+    var fileInp = el('user-foto');
+    if (fileInp && fileInp.files && fileInp.files[0]) {
+      var fd = new FormData();
+      fd.append('foto', fileInp.files[0]);
+      fetch('api.php?action=uploadFoto', { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (res.status === 'success') { doSave(res.path); }
+          else { toast(res.message || 'Upload gagal', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; } }
+        })
+        .catch(function () { toast('Gagal upload foto', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; } });
+    } else {
+      doSave(null);
+    }
   };
 
   // ---------- confirm delete ----------

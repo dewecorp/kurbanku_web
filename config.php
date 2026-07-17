@@ -4,6 +4,20 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'qurbanku');
 
+// Disable error display in production
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
+// Secure session configuration
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.cookie_secure', '0'); // Set to 1 if using HTTPS
+    session_start();
+}
+
 function getDB() {
     static $pdo = null;
     if ($pdo === null) {
@@ -19,9 +33,9 @@ function getDB() {
                 ]
             );
         } catch (PDOException $e) {
+            error_log('Database connection failed: ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'Koneksi database gagal: ' . $e->getMessage()]);
-            exit;
+            jsonResponse(['status' => 'error', 'message' => 'Koneksi database gagal.']);
         }
     }
     return $pdo;
@@ -54,3 +68,4 @@ function generateId($prefix) {
 function now() {
     return (int)(microtime(true) * 1000);
 }
+

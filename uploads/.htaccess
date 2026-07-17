@@ -1,0 +1,8 @@
+RemoveHandler .php .phtml .php3 .php4 .php5
+RemoveType .php .phtml .php3 .php4 .php5
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<FilesMatch \.php$>
+  Require all denied
+</FilesMatch>

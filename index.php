@@ -1,4 +1,7 @@
-<?php session_start(); ?>
+<?php session_start();
+// CSRF token rotation on each page load
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -41,6 +44,7 @@ unset($_SESSION['login_error']);
 
     <form class="space-y-4" id="form-login-admin" method="post" action="auth.php">
       <input type="hidden" name="role" value="admin"/>
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>"/>
       <div>
         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Username Pengurus</label>
         <div class="relative">
@@ -63,6 +67,7 @@ unset($_SESSION['login_error']);
 
     <form class="hidden space-y-4" id="form-login-peserta" method="post" action="auth.php">
       <input type="hidden" name="role" value="shohibul"/>
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>"/>
       <div>
         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pilih Nama Shohibul</label>
         <div class="relative">
