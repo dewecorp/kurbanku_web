@@ -91,6 +91,7 @@
   function closeModal(id) { var m = el(id); if (m) m.classList.add('hidden'); }
   window.closeModal = closeModal;
   window.openModal = openModal;
+  window.toast = toast;
 
   function toggleMobileMenu() {
     var s = el('app-sidebar');

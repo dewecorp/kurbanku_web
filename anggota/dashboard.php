@@ -7,6 +7,13 @@ include '../includes/sidebar_anggota.php';
 include '../includes/topbar.php';
 ?>
 <section class="space-y-6" id="tab-dashboard">
+  <?php
+  $loginSuccess = $_SESSION['login_success'] ?? null;
+  unset($_SESSION['login_success']);
+  ?>
+  <?php if ($loginSuccess): ?>
+  <script>document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){toast(<?= json_encode($loginSuccess) ?>,'success')},300)});</script>
+  <?php endif; ?>
   <div id="dashboard-hero"></div>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="dashboard-stats"></div>
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

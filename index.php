@@ -12,6 +12,11 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="assets/fontawesome/css/all.min.css" rel="stylesheet"/>
   <script src="assets/js/vendor/lucide.js"></script>
+  <style>
+    @keyframes slideDown{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .animate-in{animation:slideDown .35s ease-out}
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4">
 <?php
@@ -30,7 +35,12 @@ unset($_SESSION['login_error']);
   </div>
   <div class="p-8 pt-4">
     <?php if ($error): ?>
-      <div class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-xs font-semibold"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+    <?php
+    $success = $_SESSION['login_success'] ?? null;
+    unset($_SESSION['login_success']);
+    ?>
+    <?php if ($success): ?>
     <?php endif; ?>
 
     <div class="flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 mb-6">
@@ -146,6 +156,12 @@ async function loadAnggota() {
 document.addEventListener("DOMContentLoaded", function() {
   if (window.lucide) lucide.createIcons();
   loadAnggota();
+  <?php if ($error): ?>
+  (function(){var c=document.getElementById('toast-container');if(!c){c=document.createElement('div');c.id='toast-container';c.style.cssText='position:fixed;top:20px;right:20px;z-index:2147483647;display:flex;flex-direction:column;gap:8px;pointer-events:none;';document.body.appendChild(c)}var t=document.createElement('div');t.style.cssText='pointer-events:auto;color:#fff;font:600 13px/1.4 system-ui,sans-serif;background:linear-gradient(135deg,#dc2626,#ef4444);padding:12px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28);max-width:320px;display:flex;align-items:center;gap:10px;animation:slideUp .35s ease-out;';t.innerHTML='<span style="font-weight:800;width:20px;height:20px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:12px;">\u2715</span><span><?= json_encode($error) ?></span>';c.appendChild(t);setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove()},300)},4000)})();
+  <?php endif; ?>
+  <?php if ($success): ?>
+  (function(){var c=document.getElementById('toast-container');if(!c){c=document.createElement('div');c.id='toast-container';c.style.cssText='position:fixed;top:20px;right:20px;z-index:2147483647;display:flex;flex-direction:column;gap:8px;pointer-events:none;';document.body.appendChild(c)}var t=document.createElement('div');t.style.cssText='pointer-events:auto;color:#fff;font:600 13px/1.4 system-ui,sans-serif;background:linear-gradient(135deg,#059669,#10b981);padding:12px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28);max-width:320px;display:flex;align-items:center;gap:10px;animation:slideUp .35s ease-out;';t.innerHTML='<span style="font-weight:800;width:20px;height:20px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:12px;">\u2713</span><span><?= json_encode($success) ?></span>';c.appendChild(t);setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove()},300)},4000)})();
+  <?php endif; ?>
 });
 </script>
 </body>

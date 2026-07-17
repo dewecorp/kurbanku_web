@@ -45,6 +45,7 @@ if ($role === 'admin') {
     if ($adminUser && password_verify($pin, $adminUser['password'])) {
         session_regenerate_id(true);
         $_SESSION['user'] = ['role' => 'admin', 'data' => ['id' => $adminUser['id'], 'nama' => $adminUser['nama']]];
+        $_SESSION['login_success'] = 'Login berhasil. Selamat datang, ' . $adminUser['nama'] . '!';
         header('Location: admin/dashboard.php');
         exit;
     }
@@ -58,6 +59,7 @@ if ($role === 'admin') {
         $anggotaData = $anggota->fetch();
         session_regenerate_id(true);
         $_SESSION['user'] = ['role' => 'shohibul', 'data' => ['id' => $member['username'], 'nama' => $member['nama'], 'kelompok_id' => $anggotaData['kelompok_id'] ?? '', 'target_saving' => (int)($anggotaData['target_tabungan'] ?? 0)]];
+        $_SESSION['login_success'] = 'Login berhasil. Selamat datang, ' . $member['nama'] . '!';
         header('Location: anggota/dashboard.php');
         exit;
     }
