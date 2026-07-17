@@ -570,6 +570,12 @@
     if (el('header-title')) el('header-title').textContent = t[1];
     if (el('header-user-display')) el('header-user-display').textContent = (state.user && (state.user.name || state.user.nama)) || 'Pengguna';
     if (el('header-user-role')) el('header-user-role').textContent = state.user && state.user.role === 'admin' ? 'Pengurus' : 'Shohibul';
+    // tahap badge
+    var badge = el('header-tahap-badge');
+    if (badge) {
+      var aktif = state.data.tahaps.find(function (t) { return t.id === state.currentTahapId; });
+      badge.innerHTML = aktif ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>' + esc(aktif.nama) + '</span>' : '';
+    }
   }
 
   // ---------- page dispatch ----------
@@ -879,6 +885,7 @@
       fillGroupSelect();
       fillStageFilters();
       renderCurrentPage();
+      renderHeader(); // update badge tahap setelah data terload
     }).catch(function (e) {
       setCloud('Gagal memuat', false);
       toast('Gagal memuat data: ' + (e.message || ''), 'error');

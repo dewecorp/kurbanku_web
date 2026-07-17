@@ -8,6 +8,7 @@
         <h2 class="text-lg font-bold text-slate-900 leading-tight" id="header-title">Dashboard Utama</h2>
       </div>
     </div>
+    <div class="hidden lg:flex items-center gap-2" id="header-tahap-badge"></div>
     <div class="flex items-center gap-4">
       <div class="text-right hidden md:block mr-1">
         <p class="text-xs font-bold text-slate-800" id="header-clock-date">-</p>
