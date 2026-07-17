@@ -1,0 +1,7 @@
+backups/
+backup-commit-push.bat
+commit.bat
+script push github qurbanku.txt
+scripts/
+node_modules/
+*.zip
